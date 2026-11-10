@@ -1,0 +1,302 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="description" content="Debt payoff and savings planner: avalanche vs snowball, emergency fund, pay off early or invest."><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Payoff Ledger</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Libre+Franklin:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root{
+  --bg:#f2f4f6; --panel:#ffffff; --ink:#1b2633; --muted:#5d6b7a; --line:#d7dde4;
+  --accent:#12665a; --debt:#b2432f; --save:#1f7a4a; --warn-bg:#fdf1e6; --warn:#8a4b12;
+  --serif:"Young Serif",Georgia,serif; --sans:"Libre Franklin",system-ui,sans-serif; --mono:"JetBrains Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark; --bg:#121820; --panel:#1a222c; --ink:#e3e9ef; --muted:#93a1b0; --line:#2c3743;
+  --accent:#4fbfa9; --debt:#ec7e67; --save:#5cc98c; --warn-bg:#33240f; --warn:#f0b574;}}
+:root[data-theme="dark"]{
+  color-scheme:dark; --bg:#121820; --panel:#1a222c; --ink:#e3e9ef; --muted:#93a1b0; --line:#2c3743;
+  --accent:#4fbfa9; --debt:#ec7e67; --save:#5cc98c; --warn-bg:#33240f; --warn:#f0b574;}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--sans);padding-inline:16px;padding-block:24px 48px}
+main{max-width:1040px;margin:0 auto;display:grid;gap:28px}
+h1,h2{font-family:var(--serif);font-weight:400;text-wrap:balance;margin:0}
+h1{font-size:2rem} h2{font-size:1.25rem}
+p{margin:0;max-width:65ch}
+.muted{color:var(--muted)}
+.label{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.num,input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:28px;align-items:start}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+@media (max-width:560px){.fields{grid-template-columns:1fr!important}}
+section{display:grid;gap:14px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:18px;display:grid;gap:14px}
+.fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label.f{display:grid;gap:4px;font-size:.85rem;color:var(--muted)}
+input,select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:7px 9px;width:100%;box-sizing:border-box;min-width:0}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th{text-align:left;font-weight:600;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:6px 6px;border-bottom:1px solid var(--line)}
+td{padding:4px 6px;border-bottom:1px solid var(--line)}
+td.r,th.r{text-align:right}
+#debts input{min-width:70px}
+#debts td:first-child input{min-width:110px}
+button{font:inherit;cursor:pointer;border-radius:4px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:6px 12px}
+button.x{border:0;background:none;color:var(--muted);padding:4px 8px;font-size:1.1rem}
+button.x:hover{color:var(--debt)}
+.seg{display:flex;border:1px solid var(--line);border-radius:4px;overflow:hidden;width:max-content}
+.seg button{border:0;border-radius:0;background:transparent}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--panel)}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+@media (max-width:520px){.stats{grid-template-columns:1fr}}
+.stat{display:grid;gap:2px}
+.stat .v{font-family:var(--mono);font-size:1.45rem;font-weight:600}
+.warn{background:var(--warn-bg);color:var(--warn);border-radius:4px;padding:10px 12px}
+ol.steps{margin:0;padding-left:1.2em;display:grid;gap:8px;max-width:65ch}
+.pill{display:inline-block;font-size:.72rem;font-weight:600;padding:1px 8px;border-radius:99px;border:1px solid currentColor}
+.debt{color:var(--debt)} .save{color:var(--save)}
+svg text{fill:var(--muted);font:11px var(--mono)}
+.row{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<main>
+  <a href="/" class="muted" style="font-size:.85rem;text-decoration:none">← nipunsud.com</a>
+  <header style="display:grid;gap:8px">
+    <span class="label">Debt payoff + savings planner</span>
+    <h1>Payoff Ledger</h1>
+    <p class="muted">Enter what you earn, what you must spend, and what you owe. It builds a month-by-month plan that clears debt without leaving you one car repair away from new debt. The figures below are an example; replace them with yours. Everything stays in this browser.</p>
+  </header>
+
+  <div class="grid">
+    <section>
+      <div class="panel">
+        <h2>Your month</h2>
+        <div class="fields">
+          <label class="f">Take-home pay / month<input id="income" type="number" min="0" step="50"></label>
+          <label class="f">Essentials / month<input id="essentials" type="number" min="0" step="50" title="Rent, food, utilities, transport, insurance"><span style="font-size:.78rem">Everyday spending, including what you put on cards and pay off in full. Leave out debt payments.</span></label>
+          <label class="f">Savings today<input id="savings" type="number" min="0" step="50"></label>
+          <label class="f">Savings interest (APY %)<input id="apy" type="number" min="0" step="0.1"></label>
+          <label class="f">Starter buffer<input id="starter" type="number" min="0" step="100"></label>
+          <label class="f">Share of extra kept for savings (%)<input id="slice" type="number" min="0" max="100" step="5"></label>
+          <label class="f">Emergency fund goal (months of essentials)<input id="efMonths" type="number" min="0" step="1"></label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="row"><h2>What you owe</h2><button id="add" type="button">+ Add debt</button></div>
+        <p class="muted" style="font-size:.85rem">Add every balance you carry month to month: credit cards, loans, lines of credit. Their minimums are taken out of your budget here, so don't count them in Essentials. For a 0% promo, enter the rate it jumps to as the APR and the last 0% month under &ldquo;0% until&rdquo;. The plan charges no interest until then and ranks the debt by its later rate, so it gets cleared before the jump. Leave your mortgage out and keep its payment in Essentials.</p>
+        <div class="tbl"><table id="debts">
+          <thead><tr><th>Name</th><th class="r">Balance</th><th class="r">APR %</th><th class="r">Min / mo</th><th>0% until</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table></div>
+      </div>
+    </section>
+
+    <section>
+      <div class="panel">
+        <div class="row">
+          <h2>The plan</h2>
+          <div class="seg" role="group" aria-label="Payoff order">
+            <button type="button" data-m="avalanche" aria-pressed="true">Avalanche</button>
+            <button type="button" data-m="snowball" aria-pressed="false">Snowball</button>
+          </div>
+        </div>
+        <div id="warn" class="warn" hidden></div>
+        <div class="stats">
+          <div class="stat"><span class="label">Debt-free</span><span class="v" id="sFree">–</span><span class="muted" id="sFreeSub"></span></div>
+          <div class="stat"><span class="label">Interest paid</span><span class="v debt" id="sInt">–</span><span class="muted" id="sIntSub"></span></div>
+          <div class="stat"><span class="label">Emergency fund full</span><span class="v save" id="sEf">–</span><span class="muted" id="sEfSub"></span></div>
+        </div>
+        <div class="tbl"><svg id="chart" viewBox="0 0 560 200" width="100%" role="img" aria-label="Debt and savings over time"></svg></div>
+        <div class="muted" style="font-size:.85rem"><span class="pill debt">Total debt</span> <span class="pill save">Savings</span></div>
+      </div>
+
+      <div class="panel">
+        <h2>This month, do this</h2>
+        <div class="tbl"><table><thead><tr><th>Where</th><th class="r">Amount</th><th>Why</th></tr></thead><tbody id="now"></tbody></table></div>
+        <p class="muted" style="font-size:.85rem">Set these up as automatic transfers on payday so the plan runs without willpower.</p>
+      </div>
+
+      <div class="panel">
+        <h2>Payoff order</h2>
+        <div class="tbl"><table><thead><tr><th>#</th><th>Debt</th><th class="r">Paid off</th><th class="r">Interest</th></tr></thead><tbody id="order"></tbody></table></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="panel">
+    <h2>Pay off early or invest?</h2>
+    <p class="muted">Compares two versions of your plan. In the first, every debt gets extra payments. In the second, debts below the cutoff rate get only their minimums, and that money goes to your emergency fund and then to investing or retirement. Both use the same money each month.</p>
+    <div class="fields" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+      <label class="f">Only prepay debts at or above (APR %)<input id="cutoff" type="number" min="0" step="0.5"></label>
+      <label class="f">Expected investment return (% / yr)<input id="ret" type="number" min="0" step="0.5"></label>
+      <label class="f">Compare after (years)<input id="years" type="number" min="1" max="40" step="1"></label>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Plan</th><th class="r">Debt left</th><th class="r">Cash savings</th><th class="r">Invested</th><th class="r">Interest paid</th><th class="r">Net worth</th></tr></thead>
+      <tbody id="cmp"></tbody>
+    </table></div>
+    <p id="verdict"></p>
+    <p class="muted" style="font-size:.85rem">Paying off a debt earns its interest rate, guaranteed. Investing only earns its expected return on average, and some years it loses money. If your employer matches retirement contributions, the match is an instant 50–100% return, so take the full match first no matter what (count it in Essentials). Pre-tax retirement contributions also cut your tax bill, which this comparison leaves out, so it slightly undersells retirement.</p>
+  </section>
+
+  <section class="panel">
+    <h2>Why this method works</h2>
+    <ol class="steps">
+      <li><b>Build a starter buffer first.</b> Most payoff plans fail because a surprise bill lands on a credit card. A small cash buffer stops that cycle.</li>
+      <li><b>Always pay every minimum.</b> Missed minimums bring fees, penalty rates and credit damage that erase any progress.</li>
+      <li><b>Throw every spare dollar at one debt at a time.</b> Avalanche targets the highest rate and costs the least. Snowball targets the smallest balance and gives quicker wins. The plan shows the cost difference, so you can pick knowingly.</li>
+      <li><b>Keep saving a little the whole way.</b> A fixed slice of your extra money goes to savings. It slows payoff slightly but keeps the buffer growing, which is what makes the plan survive a bad month.</li>
+      <li><b>Roll payments forward.</b> When a debt is gone, its whole payment moves to the next one. Your monthly outlay stays the same while the attack gets bigger.</li>
+      <li><b>After the last debt, redirect everything to savings</b> until you hold your emergency fund goal. Then keep the same habit for investing.</li>
+    </ol>
+    <p class="muted" style="font-size:.85rem">If your employer matches retirement contributions, contribute enough to get the full match before extra debt payments; count that as an essential here. Rates above about 7% usually beat what savings or investments earn, so they come first.</p>
+  </section>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const KEY = "payoff-ledger-v1";
+const SAMPLE = {
+  income: 4200, essentials: 2700, savings: 300, apy: 4, starter: 1000, slice: 10, efMonths: 3, method: "avalanche",
+  debts: [
+    { name: "Visa card", balance: 6200, apr: 24.9, min: 160 },
+    { name: "Store card", balance: 900, apr: 29.9, min: 35 },
+    { name: "Car loan", balance: 11500, apr: 7.4, min: 290 },
+    { name: "Student loan", balance: 18000, apr: 5.5, min: 210 },
+  ],
+};
+let state;
+try { state = JSON.parse(localStorage.getItem(KEY)) || SAMPLE; } catch { state = SAMPLE; }
+const FIELDS = ["income", "essentials", "savings", "apy", "starter", "slice", "efMonths", "cutoff", "ret", "years"];
+state = { cutoff: 7, ret: 7, years: 5, ...state };
+
+const money = n => (n < 0 ? "-" : "") + "$" + Math.round(Math.abs(n)).toLocaleString();
+const when = m => { const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() + m - 1); return d.toLocaleString(undefined, { month: "short", year: "numeric" }); };
+const span = m => { const y = Math.floor(m / 12), r = m % 12; return [y && y + " yr", r && r + " mo"].filter(Boolean).join(" ") || "now"; };
+
+// "2027-08" -> how many plan months (month 1 = this month) are still at 0%
+const promoMonths = until => { if (!until) return 0; const [y, m] = until.split("-").map(Number), n = new Date(); return Math.max(0, (y - n.getFullYear()) * 12 + m - 1 - n.getMonth() + 1); };
+
+// Month-by-month simulation. Budget = income - essentials, fixed every month.
+function simulate(s, method, cutoff = 0, months = 0) {
+  const debts = s.debts.filter(d => d.balance > 0).map(d => ({ ...d, bal: +d.balance, interest: 0, paidOff: 0, promo: promoMonths(d.until) }));
+  const budget = s.income - s.essentials;
+  const mins = debts.reduce((a, d) => a + (+d.min || 0), 0);
+  if (budget < mins) return { error: `Your budget after essentials (${money(budget)}) doesn't cover the minimums (${money(mins)}). Cut essentials, raise income, or call lenders about hardship plans before anything else.` };
+  const efGoal = s.efMonths * s.essentials;
+  let sav = +s.savings, inv = 0, month = 0, freeAt = debts.length ? null : 0, efAt = sav >= efGoal ? 0 : null, first = null;
+  const series = [{ debt: debts.reduce((a, d) => a + d.bal, 0), sav }];
+  // ponytail: 600-month cap; a plan that long means the inputs need changing, not more months
+  while (month < 600 && (freeAt === null || efAt === null || month < months)) {
+    month++;
+    const plan = [];
+    debts.forEach(d => { if (d.bal > 0 && month > d.promo) { const i = d.bal * d.apr / 1200; d.bal += i; d.interest += i; } });
+    let left = budget;
+    for (const d of debts) if (d.bal > 0) { const p = Math.min(d.bal, +d.min || 0); d.bal -= p; left -= p; d.row = [d.name, p, "Minimum"]; plan.push(d.row); }
+    const open = () => debts.filter(d => d.bal > 0.005);
+    const target = () => open().filter(d => d.apr >= cutoff);
+    let toSave = 0, toInv = 0;
+    if (target().length) {
+      if (sav < s.starter) toSave = Math.min(left, s.starter - sav);
+      toSave += (left - toSave) * s.slice / 100;
+      left -= toSave;
+      const order = target().sort(method === "avalanche" ? (a, b) => b.apr - a.apr : (a, b) => a.bal - b.bal);
+      for (const d of order) {
+        if (left <= 0) break;
+        const p = Math.min(d.bal, left); d.bal -= p; left -= p;
+        d.row[1] += p; d.row[2] = "Minimum + all extra";
+      }
+    }
+    // leftover fills the emergency fund, then gets invested
+    const room = Math.max(0, efGoal - sav - toSave);
+    toSave += Math.min(left, room); toInv = left - Math.min(left, room);
+    if (toSave > 0) plan.push(["Savings", toSave, sav < s.starter ? "Starter buffer first" : target().length ? "Your savings slice" : "Build the emergency fund"]);
+    if (toInv > 0) plan.push(["Investing / retirement", toInv, "Emergency fund is full"]);
+    sav = sav * (1 + s.apy / 1200) + toSave;
+    inv = inv * (1 + (s.ret || 0) / 1200) + toInv;
+    debts.forEach(d => { if (d.bal <= 0.005 && !d.paidOff) { d.bal = 0; d.paidOff = month; } });
+    if (freeAt === null && !open().length) freeAt = month;
+    if (efAt === null && sav >= efGoal) efAt = month;
+    if (!first) first = plan;
+    series.push({ debt: debts.reduce((a, d) => a + d.bal, 0), sav });
+  }
+  const debt = debts.reduce((a, d) => a + d.bal, 0);
+  return { debts, freeAt, efAt, efGoal, first: first || [], series, interest: debts.reduce((a, d) => a + d.interest, 0), net: sav + inv - debt, sav, inv, debt };
+}
+
+function chart(series) {
+  const W = 560, H = 200, L = 48, B = 22, T = 8, R = 8;
+  const max = Math.max(1, ...series.map(p => Math.max(p.debt, p.sav)));
+  const x = i => L + (W - L - R) * i / Math.max(1, series.length - 1);
+  const y = v => T + (H - T - B) * (1 - v / max);
+  const line = k => series.map((p, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(p[k]).toFixed(1)}`).join("");
+  const area = k => `${line(k)}L${x(series.length - 1)},${y(0)}L${x(0)},${y(0)}Z`;
+  let g = "";
+  for (let i = 0; i <= 4; i++) { const v = max * i / 4; g += `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)"/><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v >= 1000 ? "$" + Math.round(v / 1000) + "k" : "$" + Math.round(v)}</text>`; }
+  const n = series.length - 1, step = n < 24 ? Math.max(1, Math.ceil(n / 6)) : Math.ceil(n / 6 / 12) * 12;
+  for (let m = 0; m <= n; m += step) g += `<text x="${x(m)}" y="${H - 6}" text-anchor="middle">${m ? span(m).replace(" 0 mo", "") : "now"}</text>`;
+  $("chart").innerHTML = g +
+    `<path d="${area("debt")}" fill="var(--debt)" fill-opacity=".12"/><path d="${line("debt")}" fill="none" stroke="var(--debt)" stroke-width="2"/>` +
+    `<path d="${area("sav")}" fill="var(--save)" fill-opacity=".12"/><path d="${line("sav")}" fill="none" stroke="var(--save)" stroke-width="2"/>`;
+}
+
+function render() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {}
+  document.querySelectorAll(".seg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.m === state.method));
+  const r = simulate(state, state.method);
+  $("warn").hidden = !r.error;
+  if (r.error) { $("warn").textContent = r.error; return; }
+  const other = simulate(state, state.method === "avalanche" ? "snowball" : "avalanche");
+  const capped = r.freeAt === null;
+  if (capped) { $("warn").hidden = false; $("warn").textContent = "At this budget the debt isn't cleared within 50 years. Some minimums don't cover their interest. Free up more money each month."; }
+  $("sFree").textContent = capped ? "50+ yrs" : when(r.freeAt);
+  $("sFreeSub").textContent = capped ? "" : "in " + span(r.freeAt);
+  $("sInt").textContent = money(r.interest);
+  const diff = other.interest - r.interest, name = state.method === "avalanche" ? "Snowball" : "Avalanche";
+  $("sIntSub").textContent = Math.abs(diff) < 1 ? `${name} costs the same` : `${name} would ${diff > 0 ? "cost " + money(diff) + " more" : "save " + money(-diff)}`;
+  $("sEf").textContent = r.efAt === null ? "–" : when(r.efAt);
+  $("sEfSub").textContent = `goal ${money(r.efGoal)}`;
+  chart(r.series);
+  $("now").innerHTML = r.first.filter(p => p[1] > 0.5).map(([n, a, w]) => `<tr><td>${esc(n)}</td><td class="r num">${money(a)}</td><td class="muted">${w}</td></tr>`).join("");
+  $("order").innerHTML = [...r.debts].sort((a, b) => (a.paidOff || 1e9) - (b.paidOff || 1e9))
+    .map((d, i) => `<tr><td class="num">${i + 1}</td><td>${esc(d.name)}</td><td class="r num">${d.paidOff ? when(d.paidOff) : "–"}${d.promo && (!d.paidOff || d.paidOff > d.promo) ? `<br><span class="debt" style="font-size:.8rem">not cleared before 0% ends ${when(d.promo)}</span>` : ""}</td><td class="r num">${money(d.interest)}</td></tr>`).join("");
+  compare();
+}
+
+let lastCompare = "";
+function compare() {
+  const m = Math.round(state.years * 12);
+  const a = simulate(state, state.method, 0, m), b = simulate(state, state.method, state.cutoff, m);
+  const skipped = state.debts.filter(d => d.balance > 0 && d.apr < state.cutoff).map(d => d.name);
+  const row = (name, r) => `<tr><td>${esc(name)}</td><td class="r num">${money(r.debt)}</td><td class="r num">${money(r.sav)}</td><td class="r num">${money(r.inv)}</td><td class="r num">${money(r.interest)}</td><td class="r num"><b>${money(r.net)}</b></td></tr>`;
+  $("cmp").innerHTML = row("Pay off every debt early", a) + row(skipped.length ? `Minimums on ${skipped.join(", ")}; invest the rest` : `No debts under ${state.cutoff}%`, b);
+  const d = b.net - a.net;
+  $("verdict").textContent = !skipped.length ? `Every debt is at or above ${state.cutoff}%, so both plans are the same. Lower the cutoff to test investing instead.`
+    : Math.abs(d) < 100 ? `After ${state.years} years the two plans end up within $100 of each other. Choose based on how much you value being debt-free and having cash on hand.`
+    : `After ${state.years} years, ${d > 0 ? "investing" : "paying off early"} leaves you about ${money(Math.abs(d))} ahead, assuming a ${state.ret}% return. ${d > 0 ? "That gain isn't guaranteed. A bad market year can erase it." : "That result is guaranteed, because it doesn't depend on the market."}`;
+  lastCompare = `After ${state.years} years at ${state.ret}% expected return:\n- Pay off every debt early: debt ${money(a.debt)}, cash ${money(a.sav)}, invested ${money(a.inv)}, interest paid ${money(a.interest)}, net worth ${money(a.net)}\n- Minimums only on debts under ${state.cutoff}% (${skipped.join(", ") || "none"}), invest the rest: debt ${money(b.debt)}, cash ${money(b.sav)}, invested ${money(b.inv)}, interest paid ${money(b.interest)}, net worth ${money(b.net)}`;
+}
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function drawDebts() {
+  $("debts").tBodies[0].innerHTML = state.debts.map((d, i) => `<tr data-i="${i}">
+    <td><input id="dn${i}" data-k="name" value="${esc(d.name)}" aria-label="Debt name"></td>
+    <td><input id="db${i}" data-k="balance" type="number" min="0" step="50" value="${d.balance}" aria-label="Balance"></td>
+    <td><input id="da${i}" data-k="apr" type="number" min="0" step="0.1" value="${d.apr}" aria-label="APR"></td>
+    <td><input id="dm${i}" data-k="min" type="number" min="0" step="5" value="${d.min}" aria-label="Minimum payment"></td>
+    <td><input id="du${i}" data-k="until" type="month" value="${d.until || ""}" aria-label="0% promo ends"></td>
+    <td><button class="x" type="button" aria-label="Remove ${esc(d.name)}">×</button></td></tr>`).join("");
+}
+
+FIELDS.forEach(f => { $(f).value = state[f]; $(f).addEventListener("input", e => { state[f] = +e.target.value || 0; render(); }); });
+$("debts").addEventListener("input", e => {
+  const i = +e.target.closest("tr").dataset.i, k = e.target.dataset.k;
+  state.debts[i][k] = k === "name" || k === "until" ? e.target.value : +e.target.value || 0; render();
+});
+$("debts").addEventListener("click", e => { if (!e.target.closest(".x")) return; state.debts.splice(+e.target.closest("tr").dataset.i, 1); drawDebts(); render(); });
+$("add").onclick = () => { state.debts.push({ name: "New debt", balance: 1000, apr: 20, min: 30 }); drawDebts(); render(); };
+document.querySelectorAll(".seg button").forEach(b => b.onclick = () => { state.method = b.dataset.m; render(); });
+drawDebts(); render();
+
+</script>
+
+</body></html>
